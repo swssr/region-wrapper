@@ -56,7 +56,8 @@ class RegionProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  let baseRegionWrapping = vscode.commands.registerCommand(
+  // Region Wrapping Handler
+  const baseRegionWrapping = vscode.commands.registerCommand(
     'extension.wrapWithRegion',
     async function () {
       const editor = vscode.window.activeTextEditor;
@@ -76,22 +77,31 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      let newText = `//#region ${regionName}\n${text}\n//#endregion`;
+      const wrappedCode = `// #region ${regionName}\n${text}\n// #endregion`;
 
-      editor.edit((editBuilder) => {
-        editBuilder.replace(selection, newText);
-      });
+      // Replace selection with wrapped version.
+      editor.edit((editBuilder) => editBuilder.replace(selection, wrappedCode));
+      // format the document
+      await vscode.commands.executeCommand('editor.action.formatDocument');
     }
   );
+
+  // Regions on Explorer Provider setup
+  const regionTreeCreate = vscode.window.createTreeView('regionTreeView', {
+    treeDataProvider: new RegionProvider(),
+    showCollapseAll: true,
+  });
+
+  // Region Tree change handler and Refresh
+  const onRegionChangeHandler = vscode.window.createTreeView('regionTreeView', {
+    treeDataProvider: new RegionProvider(),
+    showCollapseAll: true,
+  });
+
   context.subscriptions.push(
     baseRegionWrapping,
-    vscode.window.createTreeView('regionTreeView', {
-      treeDataProvider: new RegionProvider(),
-      showCollapseAll: true,
-    }),
-    vscode.window.onDidChangeActiveTextEditor((e) => {
-      vscode.commands.executeCommand('regionTreeView.refresh');
-    })
+    regionTreeCreate,
+    onRegionChangeHandler
   );
 }
 
