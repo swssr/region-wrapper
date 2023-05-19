@@ -16,8 +16,20 @@
       {
         "command": "region-wrapper.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "extension.wrapWithRegion",
+        "title": "Wrap with Region"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "regionTreeView",
+          "name": "Regions"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
