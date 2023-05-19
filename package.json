@@ -1,23 +1,33 @@
 {
   "name": "region-wrapper",
   "displayName": "Region Wrapper",
-  "description": "",
-  "version": "0.0.1",
+  "description": "A VS Code extension to easily wrap code blocks in regions, with a view to display them in the Activity Bar",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.78.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:extension.wrapWithRegion"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "region-wrapper.helloWorld",
-        "title": "Hello World"
+        "command": "extension.wrapWithRegion",
+        "title": "Wrap with Region"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "regionTreeView",
+          "name": "Regions"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -39,5 +49,15 @@
     "mocha": "^10.2.0",
     "typescript": "^5.0.4",
     "@vscode/test-electron": "^2.3.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/swssr/region-wrapper"
+  },
+  "publisher": "swssr",
+  "icon": "resources/icon.png",
+  "bugs": {
+    "url": "https://github.com/swssr/region-wrapper/issues"
+  },
+  "homepage": "https://github.com/swssr/region-wrapper/blob/main/README.md"
 }

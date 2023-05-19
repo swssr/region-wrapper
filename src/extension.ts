@@ -2,24 +2,107 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
+class FileItem extends vscode.TreeItem {
+  constructor(public readonly uri: vscode.Uri) {
+    super(uri.fsPath, vscode.TreeItemCollapsibleState.Collapsed);
+  }
+
+  contextValue = 'file';
+}
+
+class RegionProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    vscode.TreeItem | undefined
+  > = new vscode.EventEmitter<vscode.TreeItem | undefined>();
+  readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> =
+    this._onDidChangeTreeData.event;
+
+  getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+    return element;
+  }
+
+  getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
+    if (!element) {
+      // return the root elements (files) when no element is provided
+      if (!vscode.workspace.workspaceFolders) {
+        return Promise.resolve([]);
+      }
+      const files = vscode.workspace.workspaceFolders;
+      return Promise.resolve(files.map((file) => new FileItem(file.uri)));
+    } else if (element.contextValue === 'file') {
+      // when a file node is given, return its regions
+      const document = vscode.workspace.textDocuments.find(
+        (doc) => doc.uri.fsPath === element.label
+      )!;
+      const regionLines: vscode.TreeItem[] = [];
+      if (document) {
+        for (let line = 0; line < document.lineCount; line++) {
+          const { text } = document.lineAt(line);
+          if (text.includes('#region')) {
+            regionLines.push(new vscode.TreeItem(text.trim()));
+          }
+        }
+      }
+      return Promise.resolve(regionLines);
+    }
+    return Promise.resolve([]);
+  }
+
+  refresh(element?: vscode.TreeItem): void {
+    this._onDidChangeTreeData.fire(element);
+  }
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  // Region Wrapping Handler
+  const baseRegionWrapping = vscode.commands.registerCommand(
+    'extension.wrapWithRegion',
+    async function () {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return; // No open text editor
+      }
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "region-wrapper" is now active!');
+      let selection = editor.selection;
+      let text = editor.document.getText(selection);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('region-wrapper.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Region Wrapper!');
-	});
+      //Prompt user to enter region name
+      const regionName = await vscode.window.showInputBox({
+        prompt: 'Enter the region name.',
+      });
 
-	context.subscriptions.push(disposable);
+      if (!regionName) {
+        return;
+      }
+
+      const wrappedCode = `// #region ${regionName}\n${text}\n// #endregion`;
+
+      // Replace selection with wrapped version.
+      editor.edit((editBuilder) => editBuilder.replace(selection, wrappedCode));
+      // format the document
+      await vscode.commands.executeCommand('editor.action.formatDocument');
+    }
+  );
+
+  // Regions on Explorer Provider setup
+  const regionTreeCreate = vscode.window.createTreeView('regionTreeView', {
+    treeDataProvider: new RegionProvider(),
+    showCollapseAll: true,
+  });
+
+  // Region Tree change handler and Refresh
+  const onRegionChangeHandler = vscode.window.createTreeView('regionTreeView', {
+    treeDataProvider: new RegionProvider(),
+    showCollapseAll: true,
+  });
+
+  context.subscriptions.push(
+    baseRegionWrapping,
+    regionTreeCreate,
+    onRegionChangeHandler
+  );
 }
 
 // This method is called when your extension is deactivated
