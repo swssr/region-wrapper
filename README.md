@@ -19,7 +19,7 @@ The tree view in the Activity Bar will automatically update to reflect the curre
 
 ## Known Issues
 
-Please report any bugs or feature requests in the [GitHub issues](https://github.com/swssr/region-wrapper.git/issues) for this project.
+Please report any bugs or feature requests in the [GitHub issues](https://github.com/swssr/region-wrapper/issues) for this project.
 
 ## Release Notes
 
